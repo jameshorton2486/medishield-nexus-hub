@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,8 @@ import {
   Mail,
   Calendar,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Trash
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -35,6 +35,8 @@ import { Breadcrumbs } from "@/components/navigation/Breadcrumbs";
 import { PageTransition } from "@/components/ui/page-transition";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { AddClientModal } from "@/components/clients/AddClientModal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Client {
   id: string;
@@ -105,6 +107,42 @@ const mockClients: Client[] = [
   }
 ];
 
+function downloadCSV(clients: Client[]) {
+  const replacer = (key: string, value: any) => (value === null ? "" : value);
+  const header = [
+    "id",
+    "firstName",
+    "lastName",
+    "email",
+    "phone",
+    "dateOfBirth",
+    "status",
+    "caseNumber",
+    "lastActivity",
+    "totalRequests",
+    "pendingRequests"
+  ];
+  const csv = [
+    header.join(","),
+    ...clients.map(row =>
+      header
+        .map(fieldName =>
+          JSON.stringify((row as any)[fieldName], replacer)
+        )
+        .join(",")
+    ),
+  ].join("\r\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "clients.csv";
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
 const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -112,12 +150,21 @@ const Clients = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Modal state
+  const [addOpen, setAddOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+
+  // Confirm dialog state
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     // Simulate API call
     const timer = setTimeout(() => {
       setClients(mockClients);
       setIsLoading(false);
-    }, 1000);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -147,19 +194,70 @@ const Clients = () => {
     }
   };
 
-  const handleAddClient = () => {
-    toast({
-      title: "Add New Client",
-      description: "Client creation form would open here",
-    });
-  };
+  function handleAddClientOpen() {
+    setAddOpen(true);
+  }
 
-  const handleClientAction = (action: string, clientName: string) => {
+  async function handleAddClient(form: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+  }) {
+    setAdding(true);
+    // Simulate async call
+    setTimeout(() => {
+      // Generate a fake id and some details
+      const id = (Math.random() * 10_000_000).toFixed(0);
+      const newClient: Client = {
+        ...form,
+        id,
+        caseNumber: `CASE-2024-${id}`,
+        status: "active",
+        lastActivity: "just now",
+        totalRequests: 0,
+        pendingRequests: 0,
+      };
+      setClients(prev => [newClient, ...prev]);
+      setAddOpen(false);
+      setAdding(false);
+      toast({ title: "Client Added", description: `${form.firstName} ${form.lastName} was added successfully.` });
+    }, 600);
+  }
+
+  function handleDeleteClient(client: Client) {
+    setDeleteTarget(client);
+    setDeleteOpen(true);
+  }
+
+  function confirmDeleteClient() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    // Simulate async call
+    setTimeout(() => {
+      setClients(prev => prev.filter(c => c.id !== deleteTarget.id));
+      toast({
+        title: "Client Deleted",
+        description: `${deleteTarget.firstName} ${deleteTarget.lastName} was deleted.`,
+      });
+      setDeleting(false);
+      setDeleteOpen(false);
+      setDeleteTarget(null);
+    }, 500);
+  }
+
+  function handleExportClients() {
+    if (filteredClients.length === 0) {
+      toast({ title: "No clients to export", description: "Change your filters to select clients to export." });
+      return;
+    }
+    downloadCSV(filteredClients);
     toast({
-      title: `${action} Client`,
-      description: `${action} action for ${clientName}`,
+      title: "Exported",
+      description: `Exported ${filteredClients.length} clients to CSV`,
     });
-  };
+  }
 
   const stats = {
     total: clients.length,
@@ -183,11 +281,11 @@ const Clients = () => {
           <p className="text-gray-600">Manage all your clients and their medical record requests</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExportClients}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button onClick={handleAddClient}>
+          <Button onClick={handleAddClientOpen}>
             <Plus className="h-4 w-4 mr-2" />
             Add Client
           </Button>
@@ -373,17 +471,21 @@ const Clients = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleClientAction("View", `${client.firstName} ${client.lastName}`)}>
+                          <DropdownMenuItem onClick={() => {}}>
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleClientAction("Edit", `${client.firstName} ${client.lastName}`)}>
+                          <DropdownMenuItem onClick={() => {}}>
                             Edit Client
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleClientAction("New Request", `${client.firstName} ${client.lastName}`)}>
+                          <DropdownMenuItem onClick={() => {}}>
                             New Request
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleClientAction("View Records", `${client.firstName} ${client.lastName}`)}>
+                          <DropdownMenuItem onClick={() => {}}>
                             View Records
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteClient(client)}>
+                            <Trash className="h-4 w-4 mr-2 text-destructive" />
+                            <span className="text-destructive">Delete Client</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -395,8 +497,37 @@ const Clients = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Add Client Modal */}
+      <AddClientModal
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onAddClient={handleAddClient}
+        isSubmitting={adding}
+      />
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          setDeleteOpen(open);
+          if (!open) setDeleteTarget(null);
+        }}
+        onConfirm={confirmDeleteClient}
+        title="Delete Client"
+        description={
+          deleteTarget
+            ? `Are you sure you want to permanently delete ${deleteTarget.firstName} ${deleteTarget.lastName}?`
+            : ""
+        }
+        confirmText="Delete"
+        loading={deleting}
+      />
+
     </PageTransition>
   );
 };
 
 export default Clients;
+
+// Note: This file is getting too long. Consider refactoring into smaller files for better maintainability.
