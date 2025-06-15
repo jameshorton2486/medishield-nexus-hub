@@ -268,7 +268,7 @@ export default function Login() {
               <a
                 href="#"
                 className="text-xs text-primary hover:underline underline-offset-2 focus:outline-none"
-                tabIndex={loading ? -1 : 0}
+                tabIndex={isLoading ? -1 : 0}
                 aria-label="Forgot password"
               >
                 Forgot Password?
