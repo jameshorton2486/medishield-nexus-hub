@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   LayoutDashboard,
@@ -15,6 +14,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -81,12 +81,10 @@ export const ADMIN_ITEMS = [
 
 const Sidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   
-  // In production, this would come from auth context
-  const userRole = "admin"; // This would be dynamic
-  
-  const allItems = userRole === "admin" ? [...NAV_ITEMS, ...ADMIN_ITEMS] : NAV_ITEMS;
+  const allItems = user?.role === "admin" ? [...NAV_ITEMS, ...ADMIN_ITEMS] : NAV_ITEMS;
 
   return (
     <aside

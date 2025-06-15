@@ -1,6 +1,7 @@
-
 import * as React from "react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +19,9 @@ const BRAND_BG_GRADIENT =
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { login, isLoading } = useAuth();
+  
   // --- Form state ---
   const [form, setForm] = useState({
     email: "",
@@ -29,7 +33,6 @@ export default function Login() {
     password: false,
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // --- Validation state ---
@@ -71,13 +74,14 @@ export default function Login() {
     e.preventDefault();
     setTouched({ email: true, password: true });
     if (!formValid) return; // Don't submit if invalid
-    setLoading(true);
     setError(null);
-    // Simulate login error
-    setTimeout(() => {
-      setLoading(false);
+    const success = await login(form.email, form.password);
+    
+    if (success) {
+      navigate("/dashboard");
+    } else {
       setError("Invalid credentials. Please try again.");
-    }, 1200);
+    }
   }
 
   return (
@@ -118,6 +122,11 @@ export default function Login() {
               <p className="text-sm text-muted-foreground mb-4">
                 Enter your credentials to access the secure portal.
               </p>
+              <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-md mb-4">
+                <strong>Demo Credentials:</strong><br />
+                Admin: admin@acmehealth.com / password123<br />
+                User: user@acmehealth.com / password123
+              </div>
             </div>
             {/* --- Email Input --- */}
             <div className="mb-2">
@@ -150,7 +159,7 @@ export default function Login() {
                     : "email-help"
                 }
                 tabIndex={0}
-                disabled={loading}
+                disabled={isLoading}
                 value={form.email}
                 onChange={handleChange}
                 onBlur={handleBlur}
@@ -201,7 +210,7 @@ export default function Login() {
                     ? "password-error"
                     : "password-help"
                 }
-                disabled={loading}
+                disabled={isLoading}
                 value={form.password}
                 onChange={handleChange}
                 onBlur={handleBlur}
@@ -244,7 +253,7 @@ export default function Login() {
                   onCheckedChange={(v) =>
                     setForm((f) => ({ ...f, remember: v === true }))
                   }
-                  disabled={loading}
+                  disabled={isLoading}
                   aria-label="Remember Me"
                   tabIndex={0}
                 />
@@ -278,10 +287,10 @@ export default function Login() {
               type="submit"
               className="w-full font-semibold text-base h-11 bg-primary hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md transition disabled:opacity-70"
               aria-label="Sign in"
-              disabled={loading || !formValid}
+              disabled={isLoading || !formValid}
               tabIndex={0}
             >
-              {loading && (
+              {isLoading && (
                 <svg
                   className="animate-spin h-5 w-5 mr-2 text-white"
                   xmlns="http://www.w3.org/2000/svg"

@@ -1,5 +1,7 @@
 
 import { UserCircle, Bell, Settings, LogOut, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,7 +15,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
 const Header = () => {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const notificationCount = 3;
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
@@ -36,7 +45,6 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Search Bar */}
         <div className="hidden md:flex flex-1 max-w-md mx-8">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -97,12 +105,12 @@ const Header = () => {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">John Doe</p>
+                  <p className="text-sm font-medium leading-none">{user?.name || 'User'}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    john.doe@acmehealth.com
+                    {user?.email || 'user@example.com'}
                   </p>
-                  <Badge variant="outline" className="w-fit mt-1">
-                    Administrator
+                  <Badge variant="outline" className="w-fit mt-1 capitalize">
+                    {user?.role || 'User'}
                   </Badge>
                 </div>
               </DropdownMenuLabel>
@@ -116,7 +124,7 @@ const Header = () => {
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
