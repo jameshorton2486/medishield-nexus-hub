@@ -20,15 +20,17 @@ export function EnhancedInput({
   helperText,
   required,
   className,
+  id,
   ...props
 }: EnhancedInputProps) {
   const hasError = !!error;
   const hasSuccess = success && !hasError;
+  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
 
   return (
     <div className="space-y-2">
       {label && (
-        <Label className={cn(hasError && 'text-destructive')}>
+        <Label htmlFor={inputId} className={cn(hasError && 'text-destructive')}>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
@@ -36,6 +38,7 @@ export function EnhancedInput({
       
       <div className="relative">
         <Input
+          id={inputId}
           className={cn(
             'pr-10',
             hasError && 'border-destructive focus-visible:ring-destructive',
