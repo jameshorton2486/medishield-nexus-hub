@@ -8,6 +8,8 @@ import {
   FileBox,
   PieChart,
   Settings,
+  BookOpen,
+  UserPlus,
   LogOut,
   Link2
 } from "lucide-react";
@@ -45,15 +47,34 @@ export const NAV_ITEMS = [
     to: "/reports",
   },
   {
+    label: "Documentation",
+    icon: BookOpen,
+    to: "/documentation",
+  },
+  {
     label: "Settings",
     icon: Settings,
     to: "/settings",
   },
 ];
 
+// Admin-only items
+export const ADMIN_ITEMS = [
+  {
+    label: "Onboarding",
+    icon: UserPlus,
+    to: "/onboarding",
+  },
+];
+
 const Sidebar = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  
+  // In production, this would come from auth context
+  const userRole = "admin"; // This would be dynamic
+  
+  const allItems = userRole === "admin" ? [...NAV_ITEMS, ...ADMIN_ITEMS] : NAV_ITEMS;
 
   return (
     <aside
@@ -61,7 +82,7 @@ const Sidebar = () => {
         ${collapsed ? "w-16" : "w-56"} flex flex-col`}
     >
       <nav className="flex-1 flex flex-col gap-2 pt-6">
-        {NAV_ITEMS.map((item) => {
+        {allItems.map((item) => {
           const active = location.pathname.startsWith(item.to);
           return (
             <Link
