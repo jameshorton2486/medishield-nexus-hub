@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,10 @@ import {
   Building2,
   Eye,
   Share2,
-  Trash2
+  Trash2,
+  RefreshCw,
+  Grid3X3,
+  List
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -39,6 +41,15 @@ import { Breadcrumbs } from "@/components/navigation/Breadcrumbs";
 import { PageTransition } from "@/components/ui/page-transition";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentViewer } from "@/components/documents/DocumentViewer";
+import DocumentUpload from "@/components/documents/DocumentUpload";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Document {
   id: string;
@@ -119,6 +130,11 @@ const Documents = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -129,6 +145,18 @@ const Documents = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setDocuments(mockDocuments);
+      setIsRefreshing(false);
+      toast({
+        title: "Documents Refreshed",
+        description: "Document list has been updated with the latest information.",
+      });
+    }, 1000);
+  };
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = 
@@ -225,14 +253,33 @@ const Documents = () => {
           <p className="text-gray-600">Manage all medical records and related documents</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleBulkDownload}>
             <Download className="h-4 w-4 mr-2" />
             Bulk Download
           </Button>
-          <Button onClick={handleUpload}>
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Documents
-          </Button>
+          <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Documents
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Upload Documents</DialogTitle>
+              </DialogHeader>
+              <DocumentUpload />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -330,11 +377,29 @@ const Documents = () => {
                 <DropdownMenuItem onClick={() => setStatusFilter("archived")}>Archived</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <div className="flex items-center border rounded-lg">
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+                className="rounded-r-none"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className="rounded-l-none"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Documents Table */}
+      {/* Documents Display */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
@@ -345,7 +410,7 @@ const Documents = () => {
         <CardContent>
           {isLoading ? (
             <LoadingSkeleton variant="table" />
-          ) : (
+          ) : viewMode === 'table' ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -365,7 +430,9 @@ const Documents = () => {
                       <div className="flex items-center space-x-3">
                         {getFileIcon(doc.fileType)}
                         <div>
-                          <div className="font-medium text-sm">{doc.fileName}</div>
+                          <div className="font-medium text-sm cursor-pointer hover:text-blue-600" onClick={() => handleViewDocument(doc)}>
+                            {doc.fileName}
+                          </div>
                           <div className="text-xs text-gray-500">{doc.fileSize}</div>
                           {doc.requestNumber && (
                             <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">
@@ -421,7 +488,7 @@ const Documents = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleDocumentAction("View", doc.fileName)}>
+                          <DropdownMenuItem onClick={() => handleViewDocument(doc)}>
                             <Eye className="h-4 w-4 mr-2" />
                             View Document
                           </DropdownMenuItem>
@@ -444,9 +511,85 @@ const Documents = () => {
                 ))}
               </TableBody>
             </Table>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredDocuments.map((doc) => (
+                <Card key={doc.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewDocument(doc)}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        {getFileIcon(doc.fileType)}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{doc.fileName}</p>
+                          <p className="text-xs text-gray-500">{doc.fileSize}</p>
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewDocument(doc); }}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDocumentAction("Download", doc.fileName); }}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        {getCategoryBadge(doc.category)}
+                        {getStatusBadge(doc.status)}
+                      </div>
+                      
+                      <div className="text-xs text-gray-600">
+                        <p className="flex items-center">
+                          <User className="h-3 w-3 mr-1" />
+                          {doc.clientName}
+                        </p>
+                        <p className="flex items-center mt-1">
+                          <Building2 className="h-3 w-3 mr-1" />
+                          {doc.providerName}
+                        </p>
+                        <p className="flex items-center mt-1">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {new Date(doc.uploadDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-1">
+                        {doc.tags.slice(0, 2).map((tag, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {doc.tags.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{doc.tags.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
+
+      <DocumentViewer
+        document={selectedDocument}
+        isOpen={isViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
+      />
     </PageTransition>
   );
 };
