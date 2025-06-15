@@ -1,21 +1,28 @@
 
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 
 // Centered card, white background, brand-aligned
 export default function ResetPassword() {
-  // Optionally, redirect on success (e.g. using useNavigate), but here just show message + link
+  const navigate = useNavigate();
+
+  const handleSuccessRedirect = () => {
+    // Redirect to login after successful password reset
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-secondary px-4 py-10 font-inter">
       <div className="w-full max-w-[420px] rounded-2xl shadow-card px-6 py-8 bg-white">
-        <ResetPasswordForm />
+        <ResetPasswordForm onSuccessRedirect={handleSuccessRedirect} />
       </div>
       {/* Footer/Support links can be added as in other auth flows */}
       <div className="mt-8 flex flex-col items-center text-center text-xs gap-2 text-muted-foreground">
         <div>
           Need help? Contact{" "}
           <a
-            className="text-primary underline font-medium"
+            className="text-primary underline font-medium hover:text-primary/80 transition-colors"
             href="mailto:support@acmehealth.com"
             tabIndex={0}
           >
@@ -25,7 +32,7 @@ export default function ResetPassword() {
         <div className="flex gap-3 mt-1">
           <a
             href="#"
-            className="hover:underline focus:underline focus:outline-none"
+            className="hover:underline focus:underline focus:outline-none hover:text-primary transition-colors"
             tabIndex={0}
           >
             Privacy Policy
@@ -33,7 +40,7 @@ export default function ResetPassword() {
           <span>•</span>
           <a
             href="#"
-            className="hover:underline focus:underline focus:outline-none"
+            className="hover:underline focus:underline focus:outline-none hover:text-primary transition-colors"
             tabIndex={0}
           >
             Terms of Use

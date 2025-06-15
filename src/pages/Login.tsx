@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -68,6 +69,10 @@ export default function Login() {
 
   function handleTogglePassword() {
     setShowPassword((v) => !v);
+  }
+
+  function handleForgotPassword() {
+    navigate("/forgot-password");
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -265,14 +270,16 @@ export default function Login() {
                   Remember Me
                 </Label>
               </div>
-              <a
-                href="#"
-                className="text-xs text-primary hover:underline underline-offset-2 focus:outline-none"
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-xs text-primary hover:underline underline-offset-2 focus:outline-none transition-colors hover:text-primary/80"
                 tabIndex={isLoading ? -1 : 0}
                 aria-label="Forgot password"
+                disabled={isLoading}
               >
                 Forgot Password?
-              </a>
+              </button>
             </div>
             {/* --- Error Message --- */}
             {error && (
