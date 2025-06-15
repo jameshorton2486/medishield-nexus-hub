@@ -9,7 +9,10 @@ import {
   Users,
   Clock,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  Download,
+  Eye,
+  Plus
 } from "lucide-react";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -20,85 +23,95 @@ import { useEffect, useState } from "react";
 import { performanceMonitor } from "@/utils/testingHelpers";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import { AddClientModal } from "@/components/clients/AddClientModal";
 
 const userName = "John Doe";
 const firmName = "Acme Health Firm";
 const role = "admin";
 
-const metrics = [
-  {
-    label: "Active Clients",
-    value: 142,
-    change: "+12%",
-    trend: "up",
-    icon: Users,
-    color: "text-blue-600"
-  },
-  {
-    label: "Pending Requests",
-    value: 23,
-    change: "-8%",
-    trend: "down",
-    icon: Clock,
-    color: "text-orange-600"
-  },
-  {
-    label: "Records This Month",
-    value: 89,
-    change: "+24%",
-    trend: "up",
-    icon: FileText,
-    color: "text-green-600"
-  },
-  {
-    label: "Avg Response Time",
-    value: "2.3 days",
-    change: "-15%",
-    trend: "down",
-    icon: TrendingUp,
-    color: "text-purple-600"
-  }
-];
-
-const recentActivity = [
-  {
-    id: 1,
-    type: "request",
-    message: "New medical record request submitted",
-    client: "Sarah Johnson",
-    timestamp: "2 hours ago",
-    status: "pending"
-  },
-  {
-    id: 2,
-    type: "document",
-    message: "Medical records received",
-    client: "Michael Brown",
-    timestamp: "5 hours ago",
-    status: "completed"
-  },
-  {
-    id: 3,
-    type: "client",
-    message: "New client added to system",
-    client: "Emily Davis",
-    timestamp: "1 day ago",
-    status: "active"
-  },
-  {
-    id: 4,
-    type: "alert",
-    message: "Urgent: Missing signature on authorization",
-    client: "Robert Wilson",
-    timestamp: "2 days ago",
-    status: "urgent"
-  }
-];
-
 const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [buttonStates, setButtonStates] = useState<Record<string, boolean>>({});
+  const [addClientOpen, setAddClientOpen] = useState(false);
+  const [metrics, setMetrics] = useState({
+    activeClients: 142,
+    pendingRequests: 23,
+    recordsThisMonth: 89,
+    avgResponseTime: "2.3 days"
+  });
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const metricsData = [
+    {
+      label: "Active Clients",
+      value: metrics.activeClients,
+      change: "+12%",
+      trend: "up",
+      icon: Users,
+      color: "text-blue-600"
+    },
+    {
+      label: "Pending Requests",
+      value: metrics.pendingRequests,
+      change: "-8%",
+      trend: "down",
+      icon: Clock,
+      color: "text-orange-600"
+    },
+    {
+      label: "Records This Month",
+      value: metrics.recordsThisMonth,
+      change: "+24%",
+      trend: "up",
+      icon: FileText,
+      color: "text-green-600"
+    },
+    {
+      label: "Avg Response Time",
+      value: metrics.avgResponseTime,
+      change: "-15%",
+      trend: "down",
+      icon: TrendingUp,
+      color: "text-purple-600"
+    }
+  ];
+
+  const recentActivity = [
+    {
+      id: 1,
+      type: "request",
+      message: "New medical record request submitted",
+      client: "Sarah Johnson",
+      timestamp: "2 hours ago",
+      status: "pending"
+    },
+    {
+      id: 2,
+      type: "document",
+      message: "Medical records received",
+      client: "Michael Brown",
+      timestamp: "5 hours ago",
+      status: "completed"
+    },
+    {
+      id: 3,
+      type: "client",
+      message: "New client added to system",
+      client: "Emily Davis",
+      timestamp: "1 day ago",
+      status: "active"
+    },
+    {
+      id: 4,
+      type: "alert",
+      message: "Urgent: Missing signature on authorization",
+      client: "Robert Wilson",
+      timestamp: "2 days ago",
+      status: "urgent"
+    }
+  ];
 
   useEffect(() => {
     performanceMonitor.startTiming('Dashboard-page-load');
@@ -117,21 +130,21 @@ const Dashboard = () => {
     };
   }, []);
 
-  const handleQuickAction = async (actionKey: string, actionName: string, url?: string) => {
+  const handleQuickAction = async (actionKey: string, actionName: string, callback?: () => void) => {
     setButtonStates(prev => ({ ...prev, [actionKey]: true }));
     performanceMonitor.startTiming(`${actionKey}-action`);
     
     try {
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      if (callback) {
+        callback();
+      }
+      
       toast({
         title: "Success",
         description: `${actionName} completed successfully!`,
       });
-      
-      if (url) {
-        window.location.href = url;
-      }
       
     } catch (error) {
       toast({
@@ -145,33 +158,59 @@ const Dashboard = () => {
     }
   };
 
+  const handleAddClient = async (clientData: any) => {
+    console.log('Adding client:', clientData);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Update metrics
+    setMetrics(prev => ({
+      ...prev,
+      activeClients: prev.activeClients + 1
+    }));
+    
+    setAddClientOpen(false);
+    toast({
+      title: "Client Added",
+      description: `${clientData.firstName} ${clientData.lastName} has been added successfully.`,
+    });
+  };
+
+  const generateRequestLetter = () => {
+    console.log('Generating request letter...');
+    // This would typically generate a document
+    toast({
+      title: "Letter Generated",
+      description: "Request letter has been generated and is ready for download.",
+    });
+  };
+
   const quickActions = [
     {
       key: "add-client",
       label: "Add New Client",
       icon: <UserPlus className="h-4 w-4" />,
-      onClick: () => handleQuickAction("add-client", "Add New Client", "/clients"),
+      onClick: () => handleQuickAction("add-client", "Add New Client", () => setAddClientOpen(true)),
       variant: "default" as const
     },
     {
       key: "generate-letter",
       label: "Generate Request Letter",
       icon: <FileText className="h-4 w-4" />,
-      onClick: () => handleQuickAction("generate-letter", "Generate Request Letter"),
+      onClick: () => handleQuickAction("generate-letter", "Generate Request Letter", generateRequestLetter),
       variant: "secondary" as const
     },
     {
       key: "upload-docs",
       label: "Upload Documents",
       icon: <UploadCloud className="h-4 w-4" />,
-      onClick: () => handleQuickAction("upload-docs", "Upload Documents", "/documents"),
+      onClick: () => handleQuickAction("upload-docs", "Upload Documents", () => navigate("/documents")),
       variant: "outline" as const
     },
     {
       key: "view-reports",
       label: "View Analytics",
       icon: <BarChart2 className="h-4 w-4" />,
-      onClick: () => handleQuickAction("view-reports", "View Analytics", "/reports"),
+      onClick: () => handleQuickAction("view-reports", "View Analytics", () => navigate("/reports")),
       variant: "secondary" as const
     },
   ];
@@ -196,13 +235,53 @@ const Dashboard = () => {
     }
   };
 
+  const handleViewAllActivity = () => {
+    console.log('Viewing all activity...');
+    toast({
+      title: "Activity Log",
+      description: "Opening detailed activity log...",
+    });
+  };
+
+  const exportDashboardData = () => {
+    console.log('Exporting dashboard data...');
+    const data = {
+      metrics: metricsData,
+      recentActivity,
+      exportDate: new Date().toISOString(),
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Export Complete",
+      description: "Dashboard data has been exported successfully.",
+    });
+  };
+
   return (
     <PageTransition className="max-w-7xl mx-auto w-full space-y-6">
-      <Breadcrumbs 
-        items={[
-          { label: "Dashboard", isCurrentPage: true }
-        ]}
-      />
+      <div className="flex items-center justify-between">
+        <Breadcrumbs 
+          items={[
+            { label: "Dashboard", isCurrentPage: true }
+          ]}
+        />
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={exportDashboardData}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Data
+          </Button>
+        </div>
+      </div>
 
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20 p-6">
@@ -218,13 +297,18 @@ const Dashboard = () => {
               <span className="capitalize">{role}</span> Access
             </Badge>
           </div>
-          <div className="text-right text-sm text-gray-500">
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
+          <div className="text-right">
+            <div className="text-sm text-gray-500 mb-2">
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </div>
+            <div className="text-xs text-gray-400">
+              Last login: Today at 9:15 AM
+            </div>
           </div>
         </div>
       </div>
@@ -234,12 +318,12 @@ const Dashboard = () => {
         {isLoading ? (
           <LoadingSkeleton variant="metrics" count={4} />
         ) : (
-          metrics.map((metric, index) => (
-            <Card key={metric.label} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20">
+          metricsData.map((metric, index) => (
+            <Card key={metric.label} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 cursor-pointer group">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg bg-gray-50 ${metric.color}`}>
+                    <div className={`p-2 rounded-lg bg-gray-50 group-hover:bg-primary/10 transition-colors ${metric.color}`}>
                       <metric.icon className="h-5 w-5" />
                     </div>
                     <div>
@@ -248,13 +332,18 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 flex items-center">
-                  <span className={`text-sm font-medium ${
-                    metric.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {metric.change}
-                  </span>
-                  <span className="text-sm text-gray-500 ml-1">from last month</span>
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className={`text-sm font-medium ${
+                      metric.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {metric.change}
+                    </span>
+                    <span className="text-sm text-gray-500 ml-1">from last month</span>
+                  </div>
+                  <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Eye className="h-3 w-3" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -266,16 +355,21 @@ const Dashboard = () => {
         {/* Quick Actions */}
         <Card className="lg:col-span-1">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold flex items-center">
-              <BarChart2 className="h-5 w-5 mr-2 text-primary" />
-              Quick Actions
+            <CardTitle className="text-lg font-semibold flex items-center justify-between">
+              <div className="flex items-center">
+                <BarChart2 className="h-5 w-5 mr-2 text-primary" />
+                Quick Actions
+              </div>
+              <Button variant="ghost" size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {quickActions.map((action) => (
               <LoadingButton
                 key={action.key}
-                className="w-full justify-start h-12"
+                className="w-full justify-start h-12 hover:scale-105 transition-transform"
                 variant={action.variant}
                 onClick={action.onClick}
                 loading={buttonStates[action.key]}
@@ -291,9 +385,14 @@ const Dashboard = () => {
         {/* Recent Activity */}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold flex items-center">
-              <Clock className="h-5 w-5 mr-2 text-primary" />
-              Recent Activity
+            <CardTitle className="text-lg font-semibold flex items-center justify-between">
+              <div className="flex items-center">
+                <Clock className="h-5 w-5 mr-2 text-primary" />
+                Recent Activity
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleViewAllActivity}>
+                View All
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -302,25 +401,30 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-4">
                 {recentActivity.map((activity, index) => (
-                  <div key={activity.id} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div key={activity.id} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">
                     <div className="flex-shrink-0 mt-1">
                       {getActivityIcon(activity.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{activity.message}</p>
+                      <p className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors">
+                        {activity.message}
+                      </p>
                       <p className="text-sm text-gray-600">Client: {activity.client}</p>
                       <p className="text-xs text-gray-500 mt-1">{activity.timestamp}</p>
                     </div>
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 flex items-center space-x-2">
                       <Badge variant={getStatusBadgeVariant(activity.status)} className="text-xs">
                         {activity.status}
                       </Badge>
+                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Eye className="h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
                 ))}
                 <Separator className="my-4" />
                 <div className="text-center">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleViewAllActivity}>
                     View All Activity
                   </Button>
                 </div>
@@ -329,6 +433,14 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Client Modal */}
+      <AddClientModal
+        open={addClientOpen}
+        onOpenChange={setAddClientOpen}
+        onAddClient={handleAddClient}
+        isSubmitting={buttonStates["add-client"]}
+      />
     </PageTransition>
   );
 };
