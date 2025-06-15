@@ -1,55 +1,31 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+import { DocumentViewer } from '@/components/documents/DocumentViewer';
+import { PageTransition } from '@/components/ui/page-transition';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { 
-  Search, 
   Upload, 
+  Search, 
   Filter, 
-  Download,
+  Download, 
+  Eye, 
   MoreHorizontal,
+  Grid3X3,
+  List,
+  Calendar,
   FileText,
   Image,
   FileArchive,
   File,
-  Calendar,
-  User,
-  Building2,
-  Eye,
-  Share2,
   Trash2,
-  RefreshCw,
-  Grid3X3,
-  List
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Breadcrumbs } from "@/components/navigation/Breadcrumbs";
-import { PageTransition } from "@/components/ui/page-transition";
-import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
-import { useToast } from "@/hooks/use-toast";
-import { DocumentViewer } from "@/components/documents/DocumentViewer";
-import DocumentUpload from "@/components/documents/DocumentUpload";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Share2
+} from 'lucide-react';
 
 interface Document {
   id: string;
@@ -60,141 +36,216 @@ interface Document {
   uploadedBy: string;
   clientName: string;
   providerName: string;
-  category: 'medical_records' | 'billing' | 'imaging' | 'lab_results' | 'authorization';
-  status: 'processing' | 'ready' | 'archived';
-  requestNumber?: string;
+  category: string;
+  status: string;
   tags: string[];
 }
 
+// Mock data for documents
 const mockDocuments: Document[] = [
   {
-    id: "1",
-    fileName: "Medical_Records_Sarah_Johnson.pdf",
-    fileType: "pdf",
-    fileSize: "2.4 MB",
-    uploadDate: "2024-01-16",
-    uploadedBy: "Jennifer Smith",
-    clientName: "Sarah Johnson",
-    providerName: "St. Mary's General Hospital",
-    category: "medical_records",
-    status: "ready",
-    requestNumber: "REQ-2024-001",
-    tags: ["emergency", "cardiology"]
+    id: '1',
+    fileName: 'Medical Report 2023',
+    fileType: 'pdf',
+    fileSize: '2.5 MB',
+    uploadDate: '2023-03-15',
+    uploadedBy: 'Dr. Smith',
+    clientName: 'John Doe',
+    providerName: 'General Hospital',
+    category: 'medical_records',
+    status: 'received',
+    tags: ['report', 'medical', '2023']
   },
   {
-    id: "2",
-    fileName: "Lab_Results_Michael_Brown.pdf",
-    fileType: "pdf",
-    fileSize: "1.2 MB",
-    uploadDate: "2024-01-15",
-    uploadedBy: "John Davis",
-    clientName: "Michael Brown",
-    providerName: "Downtown Family Clinic",
-    category: "lab_results",
-    status: "ready",
-    requestNumber: "REQ-2024-002",
-    tags: ["blood work", "routine"]
+    id: '2',
+    fileName: 'Authorization Form',
+    fileType: 'document',
+    fileSize: '1.2 MB',
+    uploadDate: '2023-04-01',
+    uploadedBy: 'Jane Doe',
+    clientName: 'Alice Smith',
+    providerName: 'Law Firm Inc.',
+    category: 'authorization',
+    status: 'pending',
+    tags: ['form', 'legal', 'authorization']
   },
   {
-    id: "3",
-    fileName: "MRI_Scan_Emily_Davis.zip",
-    fileType: "archive",
-    fileSize: "45.8 MB",
-    uploadDate: "2024-01-14",
-    uploadedBy: "Sarah Wilson",
-    clientName: "Emily Davis",
-    providerName: "Advanced Cardiology Associates",
-    category: "imaging",
-    status: "processing",
-    requestNumber: "REQ-2024-003",
-    tags: ["mri", "cardiac"]
+    id: '3',
+    fileName: 'X-Ray Image',
+    fileType: 'image',
+    fileSize: '800 KB',
+    uploadDate: '2023-04-05',
+    uploadedBy: 'Imaging Center',
+    clientName: 'Bob Johnson',
+    providerName: 'Radiology Clinic',
+    category: 'imaging',
+    status: 'processing',
+    tags: ['x-ray', 'image', 'radiology']
   },
   {
-    id: "4",
-    fileName: "Authorization_Form_Robert_Wilson.pdf",
-    fileType: "pdf",
-    fileSize: "0.8 MB",
-    uploadDate: "2024-01-13",
-    uploadedBy: "Michael Johnson",
-    clientName: "Robert Wilson",
-    providerName: "Regional Medical Laboratory",
-    category: "authorization",
-    status: "archived",
-    tags: ["signed", "hipaa"]
+    id: '4',
+    fileName: 'Billing Statement March',
+    fileType: 'pdf',
+    fileSize: '900 KB',
+    uploadDate: '2023-04-10',
+    uploadedBy: 'Accountant',
+    clientName: 'John Doe',
+    providerName: 'General Hospital',
+    category: 'billing',
+    status: 'received',
+    tags: ['billing', 'statement', 'march']
+  },
+  {
+    id: '5',
+    fileName: 'Lab Results Blood Test',
+    fileType: 'pdf',
+    fileSize: '1.5 MB',
+    uploadDate: '2023-04-12',
+    uploadedBy: 'Lab Technician',
+    clientName: 'Alice Smith',
+    providerName: 'LabCorp',
+    category: 'lab_results',
+    status: 'received',
+    tags: ['lab', 'results', 'blood test']
+  },
+  {
+    id: '6',
+    fileName: 'Archive of Old Records',
+    fileType: 'archive',
+    fileSize: '15 MB',
+    uploadDate: '2023-04-15',
+    uploadedBy: 'Archivist',
+    clientName: 'Bob Johnson',
+    providerName: 'Records Archive',
+    category: 'medical_records',
+    status: 'received',
+    tags: ['archive', 'old', 'records']
+  },
+  {
+    id: '7',
+    fileName: 'Another Medical Report 2022',
+    fileType: 'pdf',
+    fileSize: '2.7 MB',
+    uploadDate: '2023-04-20',
+    uploadedBy: 'Dr. Smith',
+    clientName: 'Jane Doe',
+    providerName: 'General Hospital',
+    category: 'medical_records',
+    status: 'pending',
+    tags: ['report', 'medical', '2022']
+  },
+  {
+    id: '8',
+    fileName: 'Updated Authorization Form',
+    fileType: 'document',
+    fileSize: '1.3 MB',
+    uploadDate: '2023-04-25',
+    uploadedBy: 'Jane Doe',
+    clientName: 'Charlie Brown',
+    providerName: 'Law Firm Inc.',
+    category: 'authorization',
+    status: 'processing',
+    tags: ['form', 'legal', 'authorization']
+  },
+  {
+    id: '9',
+    fileName: 'MRI Scan Results',
+    fileType: 'image',
+    fileSize: '1.1 MB',
+    uploadDate: '2023-04-30',
+    uploadedBy: 'Imaging Center',
+    clientName: 'David Lee',
+    providerName: 'Radiology Clinic',
+    category: 'imaging',
+    status: 'received',
+    tags: ['mri', 'scan', 'image']
+  },
+  {
+    id: '10',
+    fileName: 'Final Billing Statement April',
+    fileType: 'pdf',
+    fileSize: '1.0 MB',
+    uploadDate: '2023-05-05',
+    uploadedBy: 'Accountant',
+    clientName: 'Jane Doe',
+    providerName: 'General Hospital',
+    category: 'billing',
+    status: 'received',
+    tags: ['billing', 'statement', 'april']
   }
 ];
 
 const Documents = () => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [dateRange, setDateRange] = useState('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDocuments(mockDocuments);
-      setIsLoading(false);
-    }, 1000);
+  // Filter documents based on search and filters
+  const filteredDocuments = mockDocuments.filter(doc => {
+    const matchesSearch = doc.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.providerName.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
+    const matchesCategory = categoryFilter === 'all' || doc.category === categoryFilter;
+    
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setDocuments(mockDocuments);
-      setIsRefreshing(false);
-      toast({
-        title: "Documents Refreshed",
-        description: "Document list has been updated with the latest information.",
-      });
-    }, 1000);
+  const handleViewDocument = (document: Document) => {
+    setSelectedDocument(document);
+    setIsViewerOpen(true);
   };
 
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = 
-      doc.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.providerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesCategory = categoryFilter === "all" || doc.category === categoryFilter;
-    const matchesStatus = statusFilter === "all" || doc.status === statusFilter;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  const handleBulkDownload = () => {
+    if (selectedDocuments.length === 0) {
+      toast({
+        title: "No Documents Selected",
+        description: "Please select documents to download.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Download Started",
+      description: `Downloading ${selectedDocuments.length} documents...`,
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedDocuments(filteredDocuments.map(doc => doc.id));
+    } else {
+      setSelectedDocuments([]);
+    }
+  };
+
+  const handleSelectItem = (documentId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedDocuments([...selectedDocuments, documentId]);
+    } else {
+      setSelectedDocuments(selectedDocuments.filter(id => id !== documentId));
+    }
+  };
 
   const getFileIcon = (fileType: string) => {
     switch (fileType) {
       case 'pdf':
       case 'document':
-        return <FileText className="h-5 w-5 text-red-600" />;
+        return <FileText className="h-6 w-6 text-red-600" />;
       case 'image':
-        return <Image className="h-5 w-5 text-blue-600" />;
+        return <Image className="h-6 w-6 text-blue-600" />;
       case 'archive':
-        return <FileArchive className="h-5 w-5 text-purple-600" />;
+        return <FileArchive className="h-6 w-6 text-purple-600" />;
       default:
-        return <File className="h-5 w-5 text-gray-600" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'processing':
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Processing</Badge>;
-      case 'ready':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Ready</Badge>;
-      case 'archived':
-        return <Badge variant="secondary">Archived</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <File className="h-6 w-6 text-gray-600" />;
     }
   };
 
@@ -208,189 +259,119 @@ const Documents = () => {
     };
     
     return (
-      <Badge className={`${colors[category as keyof typeof colors]} hover:${colors[category as keyof typeof colors]}`}>
+      <Badge className={colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800"}>
         {category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
       </Badge>
     );
   };
 
-  const handleUpload = () => {
-    toast({
-      title: "Upload Documents",
-      description: "Document upload interface would open here",
-    });
-  };
-
-  const handleDocumentAction = (action: string, fileName: string) => {
-    toast({
-      title: `${action} Document`,
-      description: `${action} action for ${fileName}`,
-    });
-  };
-
-  const stats = {
-    total: documents.length,
-    ready: documents.filter(d => d.status === 'ready').length,
-    processing: documents.filter(d => d.status === 'processing').length,
-    totalSize: documents.reduce((acc, doc) => {
-      const size = parseFloat(doc.fileSize.split(' ')[0]);
-      return acc + size;
-    }, 0).toFixed(1)
+  const getStatusBadge = (status: string) => {
+    const colors = {
+      received: "bg-green-100 text-green-800",
+      pending: "bg-orange-100 text-orange-800",
+      processing: "bg-blue-100 text-blue-800"
+    };
+    
+    return (
+      <Badge className={colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800"}>
+        {status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+      </Badge>
+    );
   };
 
   return (
-    <PageTransition className="max-w-7xl mx-auto w-full space-y-6">
+    <PageTransition className="max-w-7xl mx-auto mt-6 px-2 sm:px-4">
       <Breadcrumbs 
         items={[
-          { label: "Documents", isCurrentPage: true }
+          { label: 'Documents', isCurrentPage: true }
         ]}
       />
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Document Management</h1>
-          <p className="text-gray-600">Manage all medical records and related documents</p>
+          <h1 className="text-3xl font-bold text-primary">Documents</h1>
+          <p className="text-gray-600">Manage and organize your medical records</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Upload className="h-4 w-4 mr-2" />
+            Upload
           </Button>
-          <Button variant="outline" size="sm" onClick={handleBulkDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Bulk Download
-          </Button>
-          <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Documents
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Upload Documents</DialogTitle>
-              </DialogHeader>
-              <DocumentUpload />
-            </DialogContent>
-          </Dialog>
+          {selectedDocuments.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleBulkDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              Download ({selectedDocuments.length})
+            </Button>
+          )}
         </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <FileText className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Documents</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-                <div className="h-3 w-3 bg-green-600 rounded-full"></div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Ready</p>
-                <p className="text-2xl font-bold">{stats.ready}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <div className="h-3 w-3 bg-yellow-600 rounded-full"></div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Processing</p>
-                <p className="text-2xl font-bold">{stats.processing}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <FileArchive className="h-8 w-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Size</p>
-                <p className="text-2xl font-bold">{stats.totalSize} GB</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filters and Search */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search documents by name, client, provider, or tags..."
+                placeholder="Search documents..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Category: {categoryFilter === "all" ? "All" : categoryFilter.replace('_', ' ')}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setCategoryFilter("all")}>All Categories</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setCategoryFilter("medical_records")}>Medical Records</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setCategoryFilter("billing")}>Billing</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setCategoryFilter("imaging")}>Imaging</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setCategoryFilter("lab_results")}>Lab Results</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setCategoryFilter("authorization")}>Authorization</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Status: {statusFilter === "all" ? "All" : statusFilter}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setStatusFilter("all")}>All Statuses</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter("ready")}>Ready</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter("processing")}>Processing</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter("archived")}>Archived</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <div className="flex items-center border rounded-lg">
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="received">Received</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="medical_records">Medical Records</SelectItem>
+                <SelectItem value="billing">Billing</SelectItem>
+                <SelectItem value="imaging">Imaging</SelectItem>
+                <SelectItem value="lab_results">Lab Results</SelectItem>
+                <SelectItem value="authorization">Authorization</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Date Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="quarter">This Quarter</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2">
               <Button
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className="rounded-r-none"
               >
                 <List className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('grid')}
-                className="rounded-l-none"
               >
                 <Grid3X3 className="h-4 w-4" />
               </Button>
@@ -399,192 +380,146 @@ const Documents = () => {
         </CardContent>
       </Card>
 
-      {/* Documents Display */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <FileText className="h-5 w-5 mr-2" />
-            Documents ({filteredDocuments.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <LoadingSkeleton variant="table" />
-          ) : viewMode === 'table' ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Document</TableHead>
-                  <TableHead>Client & Provider</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Upload Info</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead className="w-[70px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDocuments.map((doc) => (
-                  <TableRow key={doc.id} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        {getFileIcon(doc.fileType)}
-                        <div>
-                          <div className="font-medium text-sm cursor-pointer hover:text-blue-600" onClick={() => handleViewDocument(doc)}>
-                            {doc.fileName}
+      {/* Documents List/Grid */}
+      {viewMode === 'table' ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Documents ({filteredDocuments.length})</span>
+              <div className="flex items-center gap-2">
+                {selectedDocuments.length > 0 && (
+                  <Button variant="outline" size="sm" onClick={handleBulkDownload}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Selected
+                  </Button>
+                )}
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">
+                      <Checkbox
+                        checked={selectedDocuments.length === filteredDocuments.length}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </th>
+                    <th className="text-left p-2">Document</th>
+                    <th className="text-left p-2">Client</th>
+                    <th className="text-left p-2">Provider</th>
+                    <th className="text-left p-2">Category</th>
+                    <th className="text-left p-2">Status</th>
+                    <th className="text-left p-2">Date</th>
+                    <th className="text-left p-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDocuments.map((document) => (
+                    <tr key={document.id} className="border-b hover:bg-gray-50">
+                      <td className="p-2">
+                        <Checkbox
+                          checked={selectedDocuments.includes(document.id)}
+                          onCheckedChange={(checked) => handleSelectItem(document.id, !!checked)}
+                        />
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-2">
+                          {getFileIcon(document.fileType)}
+                          <div>
+                            <p className="font-medium text-sm">{document.fileName}</p>
+                            <p className="text-xs text-gray-500">{document.fileSize}</p>
                           </div>
-                          <div className="text-xs text-gray-500">{doc.fileSize}</div>
-                          {doc.requestNumber && (
-                            <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">
-                              {doc.requestNumber}
-                            </code>
-                          )}
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center text-sm">
-                          <User className="h-3 w-3 mr-1 text-gray-400" />
-                          <span className="font-medium">{doc.clientName}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Building2 className="h-3 w-3 mr-1 text-gray-400" />
-                          {doc.providerName}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getCategoryBadge(doc.category)}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(doc.status)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="text-sm">
-                          <span className="text-gray-500">By:</span> {doc.uploadedBy}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {new Date(doc.uploadDate).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {doc.tags.map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                      </td>
+                      <td className="p-2 text-sm">{document.clientName}</td>
+                      <td className="p-2 text-sm">{document.providerName}</td>
+                      <td className="p-2">
+                        {getCategoryBadge(document.category)}
+                      </td>
+                      <td className="p-2">
+                        {getStatusBadge(document.status)}
+                      </td>
+                      <td className="p-2 text-sm">{new Date(document.uploadDate).toLocaleDateString()}</td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewDocument(document)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="sm">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewDocument(doc)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Document
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDocumentAction("Download", doc.fileName)}>
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDocumentAction("Share", doc.fileName)}>
-                            <Share2 className="h-4 w-4 mr-2" />
-                            Share
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDocumentAction("Delete", doc.fileName)} className="text-red-600">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredDocuments.map((doc) => (
-                <Card key={doc.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewDocument(doc)}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        {getFileIcon(doc.fileType)}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">{doc.fileName}</p>
-                          <p className="text-xs text-gray-500">{doc.fileSize}</p>
                         </div>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleViewDocument(doc); }}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDocumentAction("Download", doc.fileName); }}>
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        {getCategoryBadge(doc.category)}
-                        {getStatusBadge(doc.status)}
-                      </div>
-                      
-                      <div className="text-xs text-gray-600">
-                        <p className="flex items-center">
-                          <User className="h-3 w-3 mr-1" />
-                          {doc.clientName}
-                        </p>
-                        <p className="flex items-center mt-1">
-                          <Building2 className="h-3 w-3 mr-1" />
-                          {doc.providerName}
-                        </p>
-                        <p className="flex items-center mt-1">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {new Date(doc.uploadDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-1">
-                        {doc.tags.slice(0, 2).map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                        {doc.tags.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{doc.tags.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredDocuments.map((document) => (
+            <Card key={document.id} className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    {getFileIcon(document.fileType)}
+                    <Checkbox
+                      checked={selectedDocuments.includes(document.id)}
+                      onCheckedChange={(checked) => handleSelectItem(document.id, !!checked)}
+                    />
+                  </div>
+                  {getStatusBadge(document.status)}
+                </div>
+                
+                <h3 className="font-medium text-sm mb-2 line-clamp-2">{document.fileName}</h3>
+                
+                <div className="space-y-1 text-xs text-gray-600 mb-3">
+                  <p><span className="font-medium">Client:</span> {document.clientName}</p>
+                  <p><span className="font-medium">Provider:</span> {document.providerName}</p>
+                  <p><span className="font-medium">Size:</span> {document.fileSize}</p>
+                  <p><span className="font-medium">Date:</span> {new Date(document.uploadDate).toLocaleDateString()}</p>
+                </div>
+                
+                <div className="mb-3">
+                  {getCategoryBadge(document.category)}
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleViewDocument(document)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
+      {/* Document Viewer */}
       <DocumentViewer
         document={selectedDocument}
         isOpen={isViewerOpen}
