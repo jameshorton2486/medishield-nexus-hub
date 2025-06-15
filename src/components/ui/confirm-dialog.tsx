@@ -1,6 +1,13 @@
 
 import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogFooter, 
+  DialogTitle, 
+  DialogDescription 
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 interface ConfirmDialogProps {
@@ -26,18 +33,26 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xs">
+      <DialogContent className="max-w-sm sm:max-w-md w-full">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
         </DialogHeader>
-        {description && (
-          <div className="text-muted-foreground text-sm py-2">{description}</div>
+        {description ? (
+          <DialogDescription className="text-muted-foreground text-sm py-2 block">{description}</DialogDescription>
+        ) : (
+          // Always render a placeholder desc to silence aria warnings.
+          <DialogDescription className="sr-only">Are you sure?</DialogDescription>
         )}
-        <DialogFooter>
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex flex-row justify-end gap-2 pt-2">
+          <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>
             {cancelText}
           </Button>
-          <Button variant="destructive" onClick={onConfirm} disabled={loading}>
+          <Button 
+            variant="destructive" 
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+          >
             {loading ? "Deleting..." : confirmText}
           </Button>
         </DialogFooter>
